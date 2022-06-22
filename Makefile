@@ -1,5 +1,6 @@
 default: help
 
+
 .PHONY: run
 .PHONY: help
 .PHONY: build
@@ -12,6 +13,7 @@ default: help
 .PHONY: generate_grpcweb
 .PHONY: generate
 
+
 JS_IMPORT_STYLE = import_style=commonjs,binary
 JS_OUT_STYLE = import_style=typescript,mode=grpcwebtext
 JS_OUT_DIR = generated/web
@@ -21,23 +23,20 @@ SECURE_CERT ?= -nodes
 CERT_FOLDER = certs
 DEFAULT_CERT_PARAMS = req -x509 -newkey rsa:4096 -keyout $(CERT_FOLDER)/key.pem -out $(CERT_FOLDER)/cert.pem -sha256 -days 365
 CERT_PARAMS = $(DEFAULT_CERT_PARAMS) $(SECURE_CERT)
+N?=1 # Migrations
+# Docker
+TAG=latest
+BRANCH_TAG=`git describe --abbrev=0 --tags | sort | head -n1`
+ifeq ($(strip $(BRANCH_TAG)),)
+    TAG="${BRANCH_TAG}"
+endif
+IMAGE=ppcamp/go-authentication:${TAG}
 
 
 ifeq ($(shell test -f .env && echo -n EXIST_ENV), EXIST_ENV)
     include .env
     export
 endif
-
-# Migrations
-N?=1
-
-# Docker
-TAG=latest
-BRANCH_TAG=`git describe --abbrev=0 --tags | sort | head -n1`
-ifeq ($(strip $(BRANCH_TAG)),)
-TAG="${BRANCH_TAG}"
-endif
-IMAGE=ppcamp/go-microservice-authentication:${TAG}
 
 
 run: ## Run the server
