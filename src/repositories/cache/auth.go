@@ -13,8 +13,9 @@ import (
 var ErrSessionExpired error = errors.New("session has expired")
 
 type auth struct {
-	client *redis.Client
-	appId  string
+	*redis.Client
+
+	appId string
 }
 
 type internalSession struct {
@@ -30,10 +31,13 @@ type Auth interface {
 	// This approach is used to get control of multiple logged devices. With this
 	// approach, we are able to invalidate all sessions for the user
 	Authorize(ctx context.Context, userId, jwtToken string, exp time.Time) error
+
 	// Valid check if the user is still logged
 	Valid(ctx context.Context, userId, key string) error
+
 	// InvalidateAll tokens for a given user id
 	InvalidateAll(ctx context.Context, userId string) error
+
 	// Invalidate some token for a given user
 	Invalidate(ctx context.Context, userId, token string) error
 }
@@ -46,13 +50,13 @@ func (s *auth) removeExpTokensAndPipe(
 	ctx context.Context,
 	key string,
 ) (redis.Pipeliner, error) {
-	tokens, err := s.client.HGetAll(ctx, key).Result()
+	tokens, err := s.HGetAll(ctx, key).Result()
 	if err != nil {
 		return nil, err
 	}
 
 	var session internalSession
-	pipe := s.client.TxPipeline()
+	pipe := s.TxPipeline()
 
 	for field, value := range tokens {
 		err := json.Unmarshal([]byte(value), &session)
@@ -97,7 +101,7 @@ func (s *auth) Authorize(
 func (s *auth) Valid(ctx context.Context, userId, key string) error {
 	k := s.getKeyForUser(userId)
 
-	r := s.client.HGet(ctx, k, key)
+	r := s.HGet(ctx, k, key)
 	if r.Err() != nil {
 		return r.Err()
 	}
@@ -116,12 +120,12 @@ func (s *auth) Valid(ctx context.Context, userId, key string) error {
 
 func (s *auth) InvalidateAll(ctx context.Context, userId string) error {
 	key := s.getKeyForUser(userId)
-	r := s.client.Del(ctx, key)
+	r := s.Del(ctx, key)
 	return r.Err()
 }
 
 func (s *auth) Invalidate(ctx context.Context, userId, token string) error {
 	key := s.getKeyForUser(userId)
-	r := s.client.HDel(ctx, key, token)
+	r := s.HDel(ctx, key, token)
 	return r.Err()
 }

@@ -9,11 +9,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-const UnexpectedMethod string = "unexpected signing method: %v"
-
 var ErrTokenInvalid error = errors.New("token invalid")
-
-var Signer Jwt = nil
 
 type Session struct {
 	UserId *string `json:"userId,omitempty"`
@@ -54,10 +50,23 @@ func NewSigner(secret *ecdsa.PrivateKey, issuer string) Jwt {
 	return &impl{secret, issuer}
 }
 
-// Init initialize a new jwt encoder/decoder. To this implementation, I'm using
+// NewSigner creates a new jwt encoder/decoder. To this implementation, I'm using
 // an ES512 algorithm
-func Init(secret *ecdsa.PrivateKey) {
-	Signer = NewSigner(secret, "authentication")
+// Note
+//
+// - The HMAC signing method (HS256,HS384,HS512) expect []byte values for
+// signing and validation
+//
+// - The RSA signing method (RS256,RS384,RS512) expect *rsa.PrivateKey for
+// signing and *rsa.PublicKey for validation
+//
+// - The ECDSA signing method (ES256,ES384,ES512) expect *ecdsa.PrivateKey for
+// signing and *ecdsa.PublicKey for validation
+//
+// - The EDSA signing method (Ed25519) expect ed25519.PrivateKey for signing
+// and ed25519.PublicKey for validation
+func DefaultSigner(secret *ecdsa.PrivateKey) Jwt {
+	return &impl{secret, "authentication"}
 }
 
 // Generate some token for a given session
@@ -79,7 +88,7 @@ func (j *impl) Generate(session *Session, exp time.Duration) (string, error) {
 func (j *impl) parse(signedToken string) (*Claims, error) {
 	keyFunc := func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			return nil, fmt.Errorf(UnexpectedMethod, token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return j.secret, nil
 	}

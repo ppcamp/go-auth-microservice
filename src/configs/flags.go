@@ -1,97 +1,91 @@
 package configs
 
 import (
-	"github.com/urfave/cli/v2"
+	"github.com/ppcamp/go-cli/env"
 )
 
-var Flags = []cli.Flag{
-	&cli.StringFlag{
-		Name:        "cache_host",
-		Destination: &CacheHost,
-		EnvVars:     []string{"CACHE_HOST"},
-		Value:       "localhost",
-	},
-	&cli.StringFlag{
-		Name:        "cache_port",
-		Destination: &CachePort,
-		EnvVars:     []string{"CACHE_PORT"},
-		Value:       "6379",
-	},
-	&cli.StringFlag{
-		Name:        "cache_password",
-		Destination: &CachePassword,
-		EnvVars:     []string{"CACHE_PASSWORD"},
-		Value:       "",
-	},
-	&cli.IntFlag{
-		Name:        "cache_database",
-		Destination: &CacheDb,
-		EnvVars:     []string{"CACHE_DATABASE"},
-		Value:       0,
-	},
+// Flags return all mappings to the config variables
+func Flags() []env.Flag {
+	return []env.Flag{
+		//#region: Cache/Redis flags
+		&env.BaseFlag[string]{
+			EnvName: "CACHE_HOST",
+			Value:   &CacheHost,
+			Default: "localhost",
+		},
+		&env.BaseFlag[string]{
+			EnvName: "CACHE_PORT",
+			Value:   &CachePort,
+			Default: "6379",
+		},
+		&env.BaseFlag[string]{
+			Value:   &CachePassword,
+			EnvName: "CACHE_PASSWORD",
+		},
+		&env.BaseFlag[int]{
+			Value:   &CacheDb,
+			Default: 0,
+			EnvName: "CACHE_DATABASE",
+		},
+		//#endregion
 
-	&cli.StringFlag{
-		Name:        "database_host",
-		Destination: &DatabaseHost,
-		EnvVars:     []string{"DATABASE_HOST"},
-		Value:       "localhost",
-	},
-	&cli.StringFlag{
-		Name:        "database_port",
-		Destination: &DatabasePort,
-		EnvVars:     []string{"DATABASE_PORT"},
-		Value:       "5432",
-	},
-	&cli.StringFlag{
-		Name:        "database_dbname",
-		Destination: &DatabaseName,
-		EnvVars:     []string{"DATABASE_DBNAME"},
-		Value:       "authentication",
-	},
-	&cli.StringFlag{
-		Name:        "database_user",
-		Destination: &DatabaseUser,
-		EnvVars:     []string{"DATABASE_USER"},
-		Value:       "authuser",
-	},
-	&cli.StringFlag{
-		Name:        "database_password",
-		Destination: &DatabasePassword,
-		EnvVars:     []string{"DATABASE_PASSWORD"},
-		Value:       "somepassword",
-	},
+		//#region: Database/Postgres flags
+		&env.BaseFlag[string]{
+			Value:   &DatabaseHost,
+			Default: "localhost",
+			EnvName: "DATABASE_HOST",
+		},
+		&env.BaseFlag[string]{
+			Value:   &DatabasePort,
+			Default: "5432",
+			EnvName: "DATABASE_PORT",
+		},
+		&env.BaseFlag[string]{
+			Value:   &DatabaseName,
+			Default: "authentication",
+			EnvName: "DATABASE_DBNAME",
+		},
+		&env.BaseFlag[string]{
+			Value:   &DatabaseUser,
+			Default: "authuser",
+			EnvName: "DATABASE_USER",
+		},
+		&env.BaseFlag[string]{
+			Value:   &DatabasePassword,
+			Default: "somepassword",
+			EnvName: "DATABASE_PASSWORD",
+		},
+		//#endregion
 
-	&cli.StringFlag{
-		Name:        "app_env",
-		Destination: &AppEnvironment,
-		EnvVars:     []string{"APP_ENV"},
-		Value:       "dev",
-	},
-	&cli.StringFlag{
-		Name:        "app_port",
-		Destination: &AppPort,
-		EnvVars:     []string{"APP_PORT"},
-		Value:       ":9000",
-	},
-	&cli.StringFlag{
-		Name:        "app_id",
-		Destination: &AppId,
-		EnvVars:     []string{"APP_ID"},
-		Value:       "3490be09e8904918997b073c460c834c",
-	},
+		//#region: App flags
+		&env.BaseFlag[string]{
+			Value:   &AppEnvironment,
+			Default: "dev",
+			EnvName: "APP_ENV",
+		},
+		&env.BaseFlag[string]{
+			Value:   &AppEnvironment,
+			Default: ":9000",
+			EnvName: "APP_PORT",
+		},
+		&env.BaseFlag[string]{
+			Value:   &AppEnvironment,
+			Default: "3490be09e8904918997b073c460c834c",
+			EnvName: "APP_ID",
+		},
+		//#endregion
 
-	&cli.StringFlag{
-		Name:        "jwt_public",
-		Destination: &JwtPublic,
-		EnvVars:     []string{"JWT_PUBLIC"},
-		Value: `ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAFeQDDdKv96vAHOivPGDiEkSt02E8qFmGNz+aFv/hZ0fkP3QLeHxm7HCMZguNcCj3HFTi3HERj8jN0nHvTXbTM6TwEG6evRIzm8qZlzfl3CsBIRtiAFmdKKHHmO9sibd7gZZifU8+emZReFF1ZyYL0v5HuT8M2vs67J2vSsyTxjkyD4ww== ppcamp@DESKTOP-14OV55P
-`,
-	},
-	&cli.StringFlag{
-		Name:        "jwt_private",
-		Destination: &JwtPrivate,
-		EnvVars:     []string{"JWT_PRIVATE"},
-		Value: `-----BEGIN OPENSSH PRIVATE KEY-----
+		//#region: JWT/ Security flags
+		&env.BaseFlag[string]{
+			Value:   &AppEnvironment,
+			EnvName: "JWT_PUBLIC",
+			Default: `ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAFeQDDdKv96vAHOivPGDiEkSt02E8qFmGNz+aFv/hZ0fkP3QLeHxm7HCMZguNcCj3HFTi3HERj8jN0nHvTXbTM6TwEG6evRIzm8qZlzfl3CsBIRtiAFmdKKHHmO9sibd7gZZifU8+emZReFF1ZyYL0v5HuT8M2vs67J2vSsyTxjkyD4ww== ppcamp@DESKTOP-14OV55P
+	`,
+		},
+		&env.BaseFlag[string]{
+			Value:   &AppEnvironment,
+			EnvName: "JWT_PRIVATE",
+			Default: `-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS
 1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQBXkAw3Sr/erwBzorzxg4hJErdNhPK
 hZhjc/mhb/4WdH5D90C3h8ZuxwjGYLjXAo9xxU4txxEY/IzdJx70120zOk8BBunr0SM5vK
@@ -104,5 +98,7 @@ x8tIUfjKNd+LZoiu7vFTk+V2L8jvaKlj3anxhcyrvSf28D8Jna1LZ5Ru+AaXgFLJCgAAAB
 ZwcGNhbXBAREVTS1RPUC0xNE9WNTVQAQIDBA==
 -----END OPENSSH PRIVATE KEY-----
 `,
-	},
+		},
+		//#endregion
+	}
 }

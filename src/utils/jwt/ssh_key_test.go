@@ -3,7 +3,7 @@ package jwt_test
 import (
 	"testing"
 
-	"authentication/utils/jwt"
+	"github.com/ppcamp/go-auth/src/utils/jwt"
 
 	"github.com/stretchr/testify/require"
 )

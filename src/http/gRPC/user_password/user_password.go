@@ -3,109 +3,113 @@ package user_password
 import (
 	context "context"
 
-	"authentication/helpers/handlers"
-	"authentication/services/user"
+	handlers "github.com/ppcamp/go-auth/src/http"
+	"github.com/ppcamp/go-auth/src/services/user"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
-	"github.com/sirupsen/logrus"
 )
 
-type UserPasswordService struct {
+type server struct {
 	UnsafeUserPasswordServiceServer
-
-	handler *handlers.Handler
+	*handlers.Handler
 }
 
-func NewUserPasswordService(
-	handler *handlers.Handler) UserPasswordServiceServer {
-	return &UserPasswordService{handler: handler}
+func NewUserPasswordService(handler *handlers.Handler) UserPasswordServiceServer {
+	return &server{Handler: handler}
 }
 
-func (u *UserPasswordService) Create(
-	ctx context.Context, in *CreateInput) (*CreateOutput, error) {
-	logrus.WithField("in", in).Info("calling create")
+func (u *server) Create(ctx context.Context, pl *CreateInput) (*CreateOutput, error) {
+	input := user.CreatePasswordIn{User: pl.GetUser(), Password: pl.GetPassword()}
 
-	pl := user.CreatePasswordIn{User: in.GetUser(), Password: in.GetPassword()}
+	service := user.NewCreatePasswordService(u.Cache)
 
-	service := user.NewCreatePasswordService(u.handler.Cache)
-	response, err := handlers.
-		Handle[user.CreatePasswordIn, user.CreatePasswordOut](ctx, pl, service)
+	response, err := handlers.Handle[
+		user.CreatePasswordIn,
+		user.CreatePasswordOut](ctx, u.Handler, input, service)
+
 	if err != nil {
 		return nil, err
 	}
-
-	logrus.Info("returning create")
 
 	return &CreateOutput{Secret: response.ActivateToken}, nil
 }
 
-func (u *UserPasswordService) Activate(
-	ctx context.Context, in *ActivateInput) (*empty.Empty, error) {
-	pl := user.ActivateAccountIn{Secret: in.GetSecret()}
-	service := user.NewActivateAccountService(u.handler.Cache)
+func (u *server) Activate(ctx context.Context, pl *ActivateInput) (*empty.Empty, error) {
+	input := user.ActivateAccountIn{Secret: pl.GetSecret()}
 
-	_, err := handlers.
-		Handle[user.ActivateAccountIn, user.ActivateAccountOut](ctx, pl, service)
+	service := user.NewActivateAccountService(u.Cache)
+
+	_, err := handlers.Handle[
+		user.ActivateAccountIn,
+		user.ActivateAccountOut](ctx, u.Handler, input, service)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return new(empty.Empty), nil
 }
 
-func (u *UserPasswordService) Recover(
-	ctx context.Context, in *RecoverInput) (*RecoverOutput, error) {
-	pl := user.RecoverPasswordIn{Email: in.GetEmail()}
-	service := user.NewRecoverPasswordService(u.handler.Cache)
+func (u *server) Recover(ctx context.Context, pl *RecoverInput) (*RecoverOutput, error) {
+	input := user.RecoverPasswordIn{Email: pl.GetEmail()}
 
-	response, err := handlers.
-		Handle[user.RecoverPasswordIn, user.RecoverPasswordOut](ctx, pl, service)
+	service := user.NewRecoverPasswordService(u.Cache)
+
+	response, err := handlers.Handle[
+		user.RecoverPasswordIn,
+		user.RecoverPasswordOut](ctx, u.Handler, input, service)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return &RecoverOutput{Secret: response.Secret}, nil
 }
 
-func (u *UserPasswordService) Update(
-	ctx context.Context, in *UpdateInput) (*empty.Empty, error) {
-	pl := user.UpdatePasswordIn{
-		RecoverToken: in.GetSecret(),
-		Password:     in.GetPassword(),
-	}
-	service := user.NewUpdatePasswordService(u.handler.Cache)
+func (u *server) Update(ctx context.Context, pl *UpdateInput) (*empty.Empty, error) {
+	input := user.UpdatePasswordIn{RecoverToken: pl.GetSecret(), Password: pl.GetPassword()}
 
-	_, err := handlers.
-		Handle[user.UpdatePasswordIn, user.UpdatePasswordOut](ctx, pl, service)
+	service := user.NewUpdatePasswordService(u.Cache)
+
+	_, err := handlers.Handle[
+		user.UpdatePasswordIn,
+		user.UpdatePasswordOut](ctx, u.Handler, input, service)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return new(empty.Empty), nil
 }
 
-func (u *UserPasswordService) UpdateByToken(
-	ctx context.Context, in *UpdateInput) (*empty.Empty, error) {
-	pl := user.UpdateLoggedIn{
-		JwtToken: in.GetSecret(),
-		Password: in.GetPassword(),
-	}
-	service := user.NewUpdateLoggedService(u.handler.Cache)
+func (u *server) UpdateByToken(ctx context.Context, pl *UpdateInput) (*empty.Empty, error) {
+	input := user.UpdateLoggedIn{JwtToken: pl.GetSecret(), Password: pl.GetPassword()}
 
-	_, err := handlers.
-		Handle[user.UpdateLoggedIn, user.UpdateLoggedOut](ctx, pl, service)
+	service := user.NewUpdateLoggedService(u.Cache, u.Signer)
+
+	_, err := handlers.Handle[
+		user.UpdateLoggedIn,
+		user.UpdateLoggedOut](ctx, u.Handler, input, service)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return new(empty.Empty), nil
 }
 
-func (u *UserPasswordService) Delete(
-	ctx context.Context, in *DeleteInput) (*empty.Empty, error) {
-	pl := user.DeleteAccountIn{Token: in.GetToken()}
+func (u *server) Delete(ctx context.Context, pl *DeleteInput) (*empty.Empty, error) {
+	input := user.DeleteAccountIn{Token: pl.GetToken()}
+
 	service := user.NewDeleteAccountService()
 
-	_, err := handlers.
-		Handle[user.DeleteAccountIn, user.DeleteAccountOut](ctx, pl, service)
+	_, err := handlers.Handle[
+		user.DeleteAccountIn,
+		user.DeleteAccountOut](ctx, u.Handler, input, service)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return new(empty.Empty), nil
 }

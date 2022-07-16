@@ -1,9 +1,9 @@
 package user
 
 import (
-	"authentication/helpers/services"
-	"authentication/repositories/cache"
-	"authentication/repositories/database"
+	"github.com/ppcamp/go-auth/src/repositories/cache"
+	"github.com/ppcamp/go-auth/src/repositories/database"
+	"github.com/ppcamp/go-auth/src/services"
 )
 
 type ActivateAccountIn struct {

@@ -3,11 +3,9 @@ package user
 import (
 	"time"
 
-	"authentication/helpers/services"
-	"authentication/repositories/cache"
-	"authentication/repositories/database"
-
-	"github.com/ppcamp/go-lib/random"
+	"github.com/ppcamp/go-auth/src/repositories/cache"
+	"github.com/ppcamp/go-auth/src/repositories/database"
+	"github.com/ppcamp/go-auth/src/services"
 )
 
 type RecoverPasswordIn struct {
@@ -34,7 +32,7 @@ func NewRecoverPasswordService(
 }
 
 func (s *recoverPasswordService) Execute(in RecoverPasswordIn) (*RecoverPasswordOut, error) {
-	secret := random.String(30)
+	secret := newSecret()
 
 	err := s.cache.StoreSecret(s.Context, in.Email, secret, s.exp)
 	if err != nil {

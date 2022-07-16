@@ -5,32 +5,32 @@ import (
 	"errors"
 	"time"
 
-	"authentication/helpers/handlers"
-	"authentication/services/auth"
+	handlers "github.com/ppcamp/go-auth/src/http"
+	auth "github.com/ppcamp/go-auth/src/services/authentication"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var ErrNotImplemented error = errors.New("not implemented")
+var errNotImplemented error = errors.New("not implemented")
 
 type AuthService struct {
 	UnsafeAuthServiceServer
 
-	handler  *handlers.Handler
+	*handlers.Handler
 	tokenExp time.Duration
 }
 
 func NewAuthService(handler *handlers.Handler) AuthServiceServer {
-	return &AuthService{handler: handler, tokenExp: time.Second * 60 * 60 * 60}
+	return &AuthService{Handler: handler, tokenExp: time.Second * 60 * 60 * 60}
 }
 
-func (s *AuthService) Login(
-	ctx context.Context, in *LoginInput) (*AuthOutput, error) {
-	pl := auth.LoginIn{User: in.User, Password: in.Password}
-	service := auth.NewLoginService(s.handler.Cache, s.tokenExp)
+func (s *AuthService) Login(ctx context.Context, pl *LoginInput) (*AuthOutput, error) {
+	input := auth.LoginIn{User: pl.User, Password: pl.Password}
 
-	response, err := handlers.Handle[auth.LoginIn, auth.LoginOut](ctx, pl, service)
+	service := auth.NewLoginService(s.Cache, s.tokenExp, s.Signer)
+
+	response, err := handlers.Handle[auth.LoginIn, auth.LoginOut](ctx, s.Handler, input, service)
 	if err != nil {
 		return nil, err
 	}
@@ -41,12 +41,12 @@ func (s *AuthService) Login(
 	}, nil
 }
 
-func (s *AuthService) Refresh(
-	ctx context.Context, in *TokenInput) (*AuthOutput, error) {
-	pl := auth.RefreshTokenIn{Token: in.Token}
-	service := auth.NewRefreshTokenService(s.handler.Cache, s.tokenExp)
+func (s *AuthService) Refresh(ctx context.Context, pl *TokenInput) (*AuthOutput, error) {
+	input := auth.RefreshTokenIn{Token: pl.Token}
 
-	response, err := handlers.Handle(ctx, pl, service)
+	service := auth.NewRefreshTokenService(s.Cache, s.tokenExp, s.Signer)
+
+	response, err := handlers.Handle(ctx, s.Handler, input, service)
 	if err != nil {
 		return nil, err
 	}
@@ -57,12 +57,12 @@ func (s *AuthService) Refresh(
 	}, nil
 }
 
-func (s *AuthService) InvalidateAll(
-	ctx context.Context, in *SessionsInput) (*empty.Empty, error) {
-	pl := auth.InvalidateTokensIn{User: in.User, Token: in.Token}
-	service := auth.NewInvalidateTokensService(s.handler.Cache)
+func (s *AuthService) InvalidateAll(ctx context.Context, pl *SessionsInput) (*empty.Empty, error) {
+	input := auth.InvalidateTokensIn{User: pl.User, Token: pl.Token}
 
-	_, err := handlers.Handle(ctx, pl, service)
+	service := auth.NewInvalidateTokensService(s.Cache, s.Signer)
+
+	_, err := handlers.Handle(ctx, s.Handler, input, service)
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +70,12 @@ func (s *AuthService) InvalidateAll(
 	return new(empty.Empty), nil
 }
 
-func (s *AuthService) IsValid(
-	ctx context.Context, in *TokenInput) (*empty.Empty, error) {
-	pl := auth.CheckTokenIn{Token: in.Token}
-	service := auth.NewCheckTokenService(s.handler.Cache)
+func (s *AuthService) IsValid(ctx context.Context, pl *TokenInput) (*empty.Empty, error) {
+	input := auth.CheckTokenIn{Token: pl.Token}
 
-	_, err := handlers.Handle(ctx, pl, service)
+	service := auth.NewCheckTokenService(s.Cache)
+
+	_, err := handlers.Handle(ctx, s.Handler, input, service)
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +83,10 @@ func (s *AuthService) IsValid(
 	return new(empty.Empty), nil
 }
 
-func (s *AuthService) ActiveSessions(
-	context.Context, *SessionsInput) (*SessionsOutput, error) {
-	return nil, ErrNotImplemented
+func (s *AuthService) ActiveSessions(context.Context, *SessionsInput) (*SessionsOutput, error) {
+	return nil, errNotImplemented
 }
 
-func (s *AuthService) Invalidate(
-	ctx context.Context, in *TokenInput) (*empty.Empty, error) {
-	return new(empty.Empty), ErrNotImplemented
+func (s *AuthService) Invalidate(ctx context.Context, in *TokenInput) (*empty.Empty, error) {
+	return new(empty.Empty), errNotImplemented
 }

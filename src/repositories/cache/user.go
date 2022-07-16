@@ -10,8 +10,8 @@ import (
 )
 
 type user struct {
-	client *redis.Client
-	appId  string
+	*redis.Client
+	appId string
 }
 
 type UserData interface {
@@ -31,7 +31,7 @@ func (s *user) StoreSecret(ctx context.Context, userId, secret string, exp time.
 	key := s.getKeyForSecret(secret)
 
 	logrus.Info("creating pipeline")
-	pipe := s.client.TxPipeline()
+	pipe := s.TxPipeline()
 	pipe.Set(ctx, key, userId, exp)
 
 	logrus.Info("exec pipeline")
@@ -42,6 +42,6 @@ func (s *user) StoreSecret(ctx context.Context, userId, secret string, exp time.
 
 func (s *user) UserFromSecret(secret string) (string, error) {
 	key := s.getKeyForSecret(secret)
-	response := s.client.Get(context.Background(), key)
+	response := s.Get(context.Background(), key)
 	return response.Val(), response.Err()
 }

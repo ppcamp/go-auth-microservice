@@ -1,25 +1,25 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
-	"time"
 
-	"authentication/configs"
-	"authentication/helpers/handlers"
-	"authentication/http/gRPC/auth"
-	"authentication/http/gRPC/user_password"
-	"authentication/repositories/cache"
-	"authentication/repositories/database"
-	grpcutils "authentication/utils/grpc"
-	"authentication/utils/jwt"
+	"github.com/ppcamp/go-auth/src/configs"
+	handlers "github.com/ppcamp/go-auth/src/http"
+	"github.com/ppcamp/go-auth/src/http/gRPC/auth"
+	"github.com/ppcamp/go-auth/src/http/gRPC/user_password"
+	"github.com/ppcamp/go-auth/src/repositories/cache"
+	"github.com/ppcamp/go-auth/src/repositories/database"
+	grpcutils "github.com/ppcamp/go-auth/src/utils/grpc"
+	"github.com/ppcamp/go-auth/src/utils/jwt"
 
-	"github.com/ppcamp/go-lib/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
+	"github.com/ppcamp/go-cli/env"
+	"github.com/ppcamp/go-cli/shutdown"
+	xtenderrors "github.com/ppcamp/go-xtendlib/errors"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -27,25 +27,54 @@ import (
 var (
 	grpcServer *grpc.Server
 	server     *http.Server
+	handler    *handlers.Handler
 )
 
-func inits() {
-	logrus.Info("Starting connection with cache")
-	cacheConfig := cache.CacheConfig{
-		Addr:        configs.CacheHost + ":" + configs.CachePort,
-		Password:    "",              // no password set
-		DB:          configs.CacheDb, // use default DB
-		DialTimeout: time.Second * 2,
+// load flags from the environment and assign the values to each variable in configs pkg
+func init() {
+	flags := configs.Flags()
+	err := env.Parse(flags)
+	if err != nil {
+		log.Panic(err)
 	}
-	cacheId := fmt.Sprintf("%s-%s", configs.APP_NAME, configs.AppId)
-	cacheRepository := errors.Must(cache.NewCacheRepository(cacheConfig, cacheId))
+}
 
-	logrus.Info("Creating vault manager/signer")
-	privateKey := errors.Must(jwt.ParseSSHPrivateKey(configs.JwtPrivate))
-	jwt.Init(privateKey)
+func main() {
+	ctx := context.Background()
 
-	logrus.Info("Starting a new store")
+	before()
 
+	err := shutdown.Graceful(ctx, run)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	after()
+}
+
+// before is usually used to initialize the services
+func before() {
+	// define cache config
+	cacheAddr := fmt.Sprintf(cache.CONNECTION_STRING, configs.CacheHost, configs.CachePort)
+	cacheId := fmt.Sprintf(cache.ID_STRING_FORMAT, configs.APP_NAME, configs.AppId)
+	cacheConfig := cache.CacheConfig{
+		Addr:        cacheAddr,
+		Password:    configs.CachePassword, // no password set
+		DB:          configs.CacheDb,       // use default DB
+		DialTimeout: configs.CACHE_CONNECTION_TIMEOUT,
+	}
+
+	// initialize cacheRepository
+	log.WithFields(
+		log.Fields{"Id": cacheId, "Config": cacheConfig}).Info("Starting connection with cache")
+	cacheRepository := xtenderrors.Must(cache.NewCacheRepository(cacheConfig, cacheId))
+
+	// initialize jwt vault manager
+	log.Info("Creating vault manager/signer")
+	privateKey := xtenderrors.Must(jwt.ParseSSHPrivateKey(configs.JwtPrivate))
+	signer := jwt.DefaultSigner(privateKey)
+
+	// define database config
 	connQuery := fmt.Sprintf(
 		database.CONNECTION_QUERY,
 		configs.DatabaseHost,
@@ -54,81 +83,72 @@ func inits() {
 		configs.DatabasePassword,
 		configs.DatabaseName,
 	)
-	logrus.Info(connQuery)
-	db := errors.Must(database.NewStore(connQuery))
 
-	logrus.Info("Initializing handlers")
-	h := &handlers.Handler{
+	// initialize database
+	log.WithField("ConnectionQuery", connQuery).Info("Starting a new store")
+	db := xtenderrors.Must(database.NewStore(connQuery))
+
+	log.Info("Initializing handlers")
+	handler = &handlers.Handler{
 		Cache:    cacheRepository,
 		Database: db,
+		Signer:   signer,
 	}
-	handlers.Init(h)
 }
 
-func main() {
-	app := cli.NewApp()
-	app.Name = "microservice-authentication"
-	app.Usage = "Used to authorize every request made for user"
-	app.Flags = configs.Flags
-	app.Action = run
-	app.Run(os.Args)
-}
+// after is called after the server closed, usually is a clean up function
+func after() {
+	log.Info("Closing server...")
+	defer log.Info("Server closed!")
 
-func gracefulStop() {
-	logrus.Info("Closing server...")
-	defer logrus.Info("Server closed!")
-
-	logrus.Info("Closing gRPC connections")
+	log.Info("\t - Closing gRPC connections")
 	grpcServer.GracefulStop()
 
-	logrus.Info("Closing http server")
+	log.Info("\t - Closing http server")
 	if err := server.Close(); err != nil {
-		logrus.Error(err)
+		log.Error(err)
 	}
 
-	handler := handlers.GetHandler()
-
-	logrus.Info("Closing PostgreSQL connections")
+	log.Info("\t - Closing Database connections")
 	if err := handler.Database.Close(); err != nil {
-		logrus.Error("fail when closing database")
+		log.Error("fail when closing database")
 	}
 
+	log.Info("\t - Closing cache connections")
+	if err := handler.Cache.Close(); err != nil {
+		log.Error(err)
+	}
 }
 
-func run(c *cli.Context) (err error) {
-	inits()
-
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-
+func run(ctx context.Context) error {
 	grpcServer = grpc.NewServer()
-	registerGrpc()
 
-	listener := errors.Must(net.Listen("tcp", configs.AppPort))
-	server = grpcutils.NewMuxServer(http.NewServeMux(), grpcServer)
-
-	go func() {
-		if err := server.Serve(listener); err != nil {
-			logrus.Fatal(errors.Wraps("Fail to serve gRPC", err))
-			signalChan <- os.Interrupt
-		}
-	}()
-
-	logrus.Infof("Server started and listening at http://localhost%s", configs.AppPort)
-	<-signalChan
-	gracefulStop()
-	return
-}
-
-func registerGrpc() {
-	handler := handlers.GetHandler()
-
+	// initialize gRPC services
 	authServer := auth.NewAuthService(handler)
 	userServer := user_password.NewUserPasswordService(handler)
-	health := &grpcutils.MyGrpcService{}
+	health := &grpcutils.GrpcHealthService{}
 
+	// register services in gRPC
 	grpc_health_v1.RegisterHealthServer(grpcServer, health)
-
 	auth.RegisterAuthServiceServer(grpcServer, authServer)
 	user_password.RegisterUserPasswordServiceServer(grpcServer, userServer)
+
+	// initialize tcp listener
+	listener, err := net.Listen("tcp", configs.AppPort)
+	if err != nil {
+		return err
+	}
+
+	// make gRPC http server
+	server = grpcutils.NewMuxServer(http.NewServeMux(), grpcServer)
+
+	//start server
+	log.Infof("Server listening at http://localhost%s", configs.AppPort)
+
+	err = server.Serve(listener)
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return xtenderrors.Wraps("fail to serve gRPC", err)
+	}
+
+	return nil
 }

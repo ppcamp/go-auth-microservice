@@ -1,10 +1,10 @@
 package user
 
 import (
-	"authentication/helpers/services"
-	"authentication/repositories/cache"
-	"authentication/repositories/database"
-	"authentication/utils/jwt"
+	"github.com/ppcamp/go-auth/src/repositories/cache"
+	"github.com/ppcamp/go-auth/src/repositories/database"
+	"github.com/ppcamp/go-auth/src/services"
+	"github.com/ppcamp/go-auth/src/utils/jwt"
 )
 
 type UpdateLoggedIn struct {
@@ -17,19 +17,21 @@ type UpdateLoggedOut struct{}
 type updateLoggedService struct {
 	services.TransactionBusiness[database.UserStorage]
 
-	cache cache.UserData
+	cache  cache.UserData
+	signer jwt.Jwt
 }
 
 // NewUpdateLoggedService creates a service that get the current logged user, check if is
 // valid, and update its password
 func NewUpdateLoggedService(
 	cache cache.UserData,
+	signer jwt.Jwt,
 ) services.ITransactionBusiness[UpdateLoggedIn, UpdateLoggedOut] {
-	return &updateLoggedService{cache: cache}
+	return &updateLoggedService{cache: cache, signer: signer}
 }
 
 func (s *updateLoggedService) Execute(in UpdateLoggedIn) (*UpdateLoggedOut, error) {
-	session, err := jwt.Signer.Session(in.JwtToken)
+	session, err := s.signer.Session(in.JwtToken)
 	if err != nil {
 		return nil, err
 	}

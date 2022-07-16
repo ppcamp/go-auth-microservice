@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"time"
 
-	"authentication/helpers/services"
-	"authentication/repositories/cache"
-	"authentication/repositories/database"
-	"authentication/utils/password"
+	"github.com/ppcamp/go-auth/src/repositories/cache"
+	"github.com/ppcamp/go-auth/src/repositories/database"
+	"github.com/ppcamp/go-auth/src/services"
 
 	"errors"
 
-	"github.com/ppcamp/go-lib/random"
 	"github.com/sirupsen/logrus"
 )
 
@@ -52,7 +50,7 @@ func (s *createPasswordService) Execute(in CreatePasswordIn) (*CreatePasswordOut
 	}
 
 	logrus.Info("hashing password")
-	hashedPassword, err := password.HashPassword(in.Password)
+	hashedPassword, err := hashPassword(in.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +61,7 @@ func (s *createPasswordService) Execute(in CreatePasswordIn) (*CreatePasswordOut
 		return nil, err
 	}
 
-	unlockSecret := random.String(30)
+	unlockSecret := newSecret()
 
 	logrus.Info("storing password at cache")
 	err = s.cache.StoreSecret(s.Context, in.User, unlockSecret, s.exp)

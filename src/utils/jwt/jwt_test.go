@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"authentication/configs"
-	"authentication/utils/jwt"
+	"github.com/ppcamp/go-auth/src/configs"
+	"github.com/ppcamp/go-auth/src/utils/jwt"
 
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +20,7 @@ func TestGenerate(t *testing.T) {
 	privateKey, err := jwt.ParseSSHPrivateKey(configs.JwtPrivate)
 	assert.Nil(err)
 
-	jwt.Init(privateKey)
+	signer := jwt.DefaultSigner(privateKey)
 
 	tests := []struct {
 		exp time.Duration
@@ -32,7 +32,7 @@ func TestGenerate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		token, err := jwt.Signer.Generate(&jwt.Session{}, time.Duration(exp))
+		token, err := signer.Generate(&jwt.Session{}, time.Duration(exp))
 		assert.Equal(test.err, err)
 		if err != nil {
 			assert.NotEmpty(token)
