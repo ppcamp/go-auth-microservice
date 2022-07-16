@@ -16,7 +16,7 @@ type ITransactionBusiness[In, Out any] interface {
 }
 
 type TransactionBusiness[T driver.Tx] struct {
-	BaseBusiness
+	*BaseBusiness
 
 	Storage T
 }
