@@ -13,8 +13,8 @@ import (
 	"github.com/ppcamp/go-auth-microservice/src/http/gRPC/user_password"
 	"github.com/ppcamp/go-auth-microservice/src/repositories/cache"
 	"github.com/ppcamp/go-auth-microservice/src/repositories/database"
-	grpcutils "github.com/ppcamp/go-auth-microservice/src/utils/grpc"
-	"github.com/ppcamp/go-auth-microservice/src/utils/jwt"
+	"github.com/ppcamp/go-auth/jwt"
+	grpcutils "github.com/ppcamp/go-grpc"
 
 	"github.com/ppcamp/go-cli/env"
 	"github.com/ppcamp/go-cli/shutdown"
@@ -126,7 +126,7 @@ func run(ctx context.Context) error {
 	// initialize gRPC services
 	authServer := auth.NewAuthService(handler)
 	userServer := user_password.NewUserPasswordService(handler)
-	health := &grpcutils.GrpcHealthService{}
+	health := grpcutils.NewHealthService()
 
 	// register services in gRPC
 	grpc_health_v1.RegisterHealthServer(grpcServer, health)

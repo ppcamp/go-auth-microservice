@@ -6,7 +6,7 @@ import (
 	"github.com/ppcamp/go-auth-microservice/src/repositories/cache"
 	"github.com/ppcamp/go-auth-microservice/src/repositories/database"
 	"github.com/ppcamp/go-auth-microservice/src/services"
-	"github.com/ppcamp/go-auth-microservice/src/utils/jwt"
+	"github.com/ppcamp/go-auth/jwt"
 
 	"golang.org/x/crypto/bcrypt"
 )

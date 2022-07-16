@@ -77,13 +77,13 @@ func Flags() []env.Flag {
 
 		//#region: JWT/ Security flags
 		&env.BaseFlag[string]{
-			Value:   &AppEnvironment,
+			Value:   &JwtPublic,
 			EnvName: "JWT_PUBLIC",
 			Default: `ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAFeQDDdKv96vAHOivPGDiEkSt02E8qFmGNz+aFv/hZ0fkP3QLeHxm7HCMZguNcCj3HFTi3HERj8jN0nHvTXbTM6TwEG6evRIzm8qZlzfl3CsBIRtiAFmdKKHHmO9sibd7gZZifU8+emZReFF1ZyYL0v5HuT8M2vs67J2vSsyTxjkyD4ww== ppcamp@DESKTOP-14OV55P
 	`,
 		},
 		&env.BaseFlag[string]{
-			Value:   &AppEnvironment,
+			Value:   &JwtPrivate,
 			EnvName: "JWT_PRIVATE",
 			Default: `-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS
