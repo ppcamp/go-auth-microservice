@@ -3,8 +3,8 @@ package user_password
 import (
 	context "context"
 
-	handlers "github.com/ppcamp/go-auth/src/http"
-	"github.com/ppcamp/go-auth/src/services/user"
+	handlers "github.com/ppcamp/go-auth-microservice/src/http"
+	"github.com/ppcamp/go-auth-microservice/src/services/user"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
 )

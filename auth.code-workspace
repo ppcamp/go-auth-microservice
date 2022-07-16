@@ -30,7 +30,7 @@
 				"substitutePath": [{
 					// if you're inside a symbolic folder/link
 					"from": "${workspaceFolder}",
-					"to": "/mnt/d/git/go-grpc-microservice-stream/github.com/ppcamp/go-auth/src/src/src"
+					"to": "/mnt/d/git/go-grpc-microservice-stream/github.com/ppcamp/go-auth-microservice/src/src/src"
 				}],
 				"env": {},
 				"args":[],

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	handlers "github.com/ppcamp/go-auth/src/http"
-	auth "github.com/ppcamp/go-auth/src/services/authentication"
+	handlers "github.com/ppcamp/go-auth-microservice/src/http"
+	auth "github.com/ppcamp/go-auth-microservice/src/services/authentication"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/protobuf/types/known/timestamppb"

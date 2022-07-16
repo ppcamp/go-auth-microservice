@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/ppcamp/go-auth/src/repositories/cache"
-	"github.com/ppcamp/go-auth/src/repositories/database"
-	"github.com/ppcamp/go-auth/src/services"
+	"github.com/ppcamp/go-auth-microservice/src/repositories/cache"
+	"github.com/ppcamp/go-auth-microservice/src/repositories/database"
+	"github.com/ppcamp/go-auth-microservice/src/services"
 
 	"errors"
 

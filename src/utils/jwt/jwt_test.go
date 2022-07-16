@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppcamp/go-auth/src/configs"
-	"github.com/ppcamp/go-auth/src/utils/jwt"
+	"github.com/ppcamp/go-auth-microservice/src/configs"
+	"github.com/ppcamp/go-auth-microservice/src/utils/jwt"
 
 	"github.com/stretchr/testify/require"
 )

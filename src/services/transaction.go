@@ -3,7 +3,7 @@ package services
 import (
 	"database/sql/driver"
 
-	"github.com/ppcamp/go-auth/src/repositories/database"
+	"github.com/ppcamp/go-auth-microservice/src/repositories/database"
 
 	"github.com/sirupsen/logrus"
 )

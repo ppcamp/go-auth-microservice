@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/ppcamp/go-auth/src/utils/jwt"
+	"github.com/ppcamp/go-auth-microservice/src/utils/jwt"
 )
 
 type IBaseBusiness[In, Out any] interface {

@@ -1,4 +1,4 @@
-module github.com/ppcamp/go-auth
+module github.com/ppcamp/go-auth-microservice
 
 go 1.18
 

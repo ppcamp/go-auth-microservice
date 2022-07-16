@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"github.com/ppcamp/go-auth/src/repositories/cache"
-	"github.com/ppcamp/go-auth/src/services"
+	"github.com/ppcamp/go-auth-microservice/src/repositories/cache"
+	"github.com/ppcamp/go-auth-microservice/src/services"
 )
 
 type CheckTokenIn struct {

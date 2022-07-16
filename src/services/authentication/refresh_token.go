@@ -3,9 +3,9 @@ package auth
 import (
 	"time"
 
-	"github.com/ppcamp/go-auth/src/repositories/cache"
-	"github.com/ppcamp/go-auth/src/services"
-	"github.com/ppcamp/go-auth/src/utils/jwt"
+	"github.com/ppcamp/go-auth-microservice/src/repositories/cache"
+	"github.com/ppcamp/go-auth-microservice/src/services"
+	"github.com/ppcamp/go-auth-microservice/src/utils/jwt"
 )
 
 type RefreshTokenIn struct {
