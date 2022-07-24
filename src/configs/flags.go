@@ -5,18 +5,18 @@ import (
 )
 
 // Flags return all mappings to the config variables
-func Flags() []env.Flag {
+func Flags() env.Flags {
 	return []env.Flag{
 		//#region: Cache/Redis flags
 		&env.BaseFlag[string]{
-			EnvName: "CACHE_HOST",
 			Value:   &CacheHost,
 			Default: "localhost",
+			EnvName: "CACHE_HOST",
 		},
 		&env.BaseFlag[string]{
-			EnvName: "CACHE_PORT",
 			Value:   &CachePort,
 			Default: "6379",
+			EnvName: "CACHE_PORT",
 		},
 		&env.BaseFlag[string]{
 			Value:   &CachePassword,
@@ -64,12 +64,12 @@ func Flags() []env.Flag {
 			EnvName: "APP_ENV",
 		},
 		&env.BaseFlag[string]{
-			Value:   &AppEnvironment,
-			Default: ":9000",
+			Value:   &AppPort,
+			Default: ":8001",
 			EnvName: "APP_PORT",
 		},
 		&env.BaseFlag[string]{
-			Value:   &AppEnvironment,
+			Value:   &AppId,
 			Default: "3490be09e8904918997b073c460c834c",
 			EnvName: "APP_ID",
 		},

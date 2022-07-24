@@ -11,10 +11,14 @@ import (
 	handlers "github.com/ppcamp/go-auth-microservice/src/http"
 	"github.com/ppcamp/go-auth-microservice/src/http/gRPC/auth"
 	"github.com/ppcamp/go-auth-microservice/src/http/gRPC/user_password"
+	"github.com/ppcamp/go-auth-microservice/src/middlewares"
 	"github.com/ppcamp/go-auth-microservice/src/repositories/cache"
 	"github.com/ppcamp/go-auth-microservice/src/repositories/database"
 	"github.com/ppcamp/go-auth/jwt"
 	grpcutils "github.com/ppcamp/go-grpc"
+	grpcjwt "github.com/ppcamp/go-grpc/middlewares/auth/jwt"
+	"github.com/ppcamp/go-grpc/middlewares/ratelimit"
+	"github.com/tchap/go-patricia/v2/patricia"
 
 	"github.com/ppcamp/go-cli/env"
 	"github.com/ppcamp/go-cli/shutdown"
@@ -37,6 +41,8 @@ func init() {
 	if err != nil {
 		log.Panic(err)
 	}
+
+	fmt.Println(flags)
 }
 
 func main() {
@@ -94,6 +100,7 @@ func before() {
 		Database: db,
 		Signer:   signer,
 	}
+
 }
 
 // after is called after the server closed, usually is a clean up function
@@ -120,35 +127,57 @@ func after() {
 	}
 }
 
+// run is the method responsible to initialize register the endpoints and start http server
 func run(ctx context.Context) error {
-	grpcServer = grpc.NewServer()
+	log.Info("Setting up middlewares")
+	authMiddleware := &middlewares.JwtMiddleware{
+		Jwt:  handler.Signer,
+		Trie: patricia.NewTrie(),
+	}
+	allowUnprotected(authMiddleware)
 
-	// initialize gRPC services
+	log.Info("Initializing gRPC server")
+	grpcServer = grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			ratelimit.UnaryInterceptor(configs.APP_MAX_REQUESTS),
+			grpcjwt.UnaryInterceptor(authMiddleware),
+		),
+		grpc.ChainStreamInterceptor(
+			grpcjwt.StreamInterceptor(authMiddleware),
+			ratelimit.StreamInterceptor(configs.APP_MAX_REQUESTS),
+		),
+	)
+
+	log.Info("Initializing services")
 	authServer := auth.NewAuthService(handler)
 	userServer := user_password.NewUserPasswordService(handler)
 	health := grpcutils.NewHealthService()
 
-	// register services in gRPC
+	log.Info("Register services in gRPC")
 	grpc_health_v1.RegisterHealthServer(grpcServer, health)
 	auth.RegisterAuthServiceServer(grpcServer, authServer)
 	user_password.RegisterUserPasswordServiceServer(grpcServer, userServer)
 
-	// initialize tcp listener
+	log.Info("Initializing tcp listener")
 	listener, err := net.Listen("tcp", configs.AppPort)
 	if err != nil {
 		return err
 	}
 
-	// make gRPC http server
+	log.Info("Make gRPC http server")
 	server = grpcutils.NewMuxServer(http.NewServeMux(), grpcServer)
 
-	//start server
 	log.Infof("Server listening at http://localhost%s", configs.AppPort)
-
 	err = server.Serve(listener)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return xtenderrors.Wraps("fail to serve gRPC", err)
+		return fmt.Errorf("fail to serve gRPC: %w", err)
 	}
 
 	return nil
+}
+
+// allowUnprotected is the method used to bypass the jwt authentication middleware
+func allowUnprotected(j *middlewares.JwtMiddleware) {
+	j.Trie.Insert(patricia.Prefix("a"), 1)
+	j.Trie.Insert(patricia.Prefix("a"), 1)
 }
