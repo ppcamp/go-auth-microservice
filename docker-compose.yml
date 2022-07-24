@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+  ###############
+  # Databases
+  ###############
+  authdb:
+    container_name: authdb
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_PASSWORD: somepassword
+      POSTGRES_USER: authuser
+      POSTGRES_DB: authentication
+    ports:
+      - 5432:5432
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        reservations:
+          memory: 50M
+        limits:
+          cpus: '0.5'
+          memory: 200M
+
+  ###############
+  # Caching
+  ###############
+  redis:
+    container_name: redis
+    image: redis
+    ports:
+      - 6379:6379
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        reservations:
+          memory: 50M
+        limits:
+          cpus: '0.5'
+          memory: 100M
+
+  # redis commander is used to visualize the redis data in an organized way (UI)
+  redis-commander:
+    container_name: redis-commander
+    # hostname: redis
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - 8081:8081
+    depends_on:
+      - redis
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        reservations:
+          memory: 20M
+        limits:
+          cpus: '0.5'
+          memory: 50M
