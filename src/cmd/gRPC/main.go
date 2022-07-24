@@ -26,6 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -157,6 +158,7 @@ func run(ctx context.Context) error {
 	grpc_health_v1.RegisterHealthServer(grpcServer, health)
 	auth.RegisterAuthServiceServer(grpcServer, authServer)
 	user_password.RegisterUserPasswordServiceServer(grpcServer, userServer)
+	reflection.Register(grpcServer) // adds server reflection
 
 	log.Info("Initializing tcp listener")
 	listener, err := net.Listen("tcp", configs.AppPort)
