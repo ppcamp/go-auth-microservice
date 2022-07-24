@@ -14,6 +14,8 @@ import (
 
 var errNotImplemented error = errors.New("not implemented")
 
+const tokenExp time.Duration = time.Second * 60 * 60 * 60
+
 type AuthService struct {
 	UnsafeAuthServiceServer
 
@@ -22,7 +24,7 @@ type AuthService struct {
 }
 
 func NewAuthService(handler *handlers.Handler) AuthServiceServer {
-	return &AuthService{Handler: handler, tokenExp: time.Second * 60 * 60 * 60}
+	return &AuthService{Handler: handler, tokenExp: tokenExp}
 }
 
 func (s *AuthService) Login(ctx context.Context, pl *LoginInput) (*AuthOutput, error) {

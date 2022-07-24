@@ -11,4 +11,7 @@ var (
 	JwtPublic  string
 )
 
-const APP_NAME string = "microservice-authentication"
+const (
+	APP_MAX_REQUESTS = 50
+	APP_NAME         = "microservice-authentication"
+)
